@@ -13,7 +13,7 @@ void show_help()
 
 int main(int argc,char* argv[])
 {
-	std::cerr<<"Walls of Fire - Rules modifier"<<std::endl;
+	std::cerr<<"Walls of Fire - Massages wofstat output into wof firewall rules."<<std::endl;
 	std::istream* istr=&std::cin;
 	std::ifstream fstr;
 	int lineno=0;
