@@ -1,1 +1,1 @@
-Walls of Fire - Rules modifier.
+Walls of Fire - Massages wofstat output into wof firewall rules.
