@@ -3,12 +3,12 @@ OPTS=-O
 CFLAGS=$(OPTS) -Wall
 SRC=../src
 
-WOFPROB_SRC=$(SRC)/main.cpp $(SRC)/parser.cpp $(SRC)/parser_util.cpp $(SRC)/string_util.cpp
+WOFPROBE_SRC=$(SRC)/main.cpp $(SRC)/probe.cpp $(SRC)/parser_util.cpp $(SRC)/string_util.cpp
 
-all: wofprob
+all: wofprobe
 
-wofprob: $(WOFPROB_SRC)
+wofprobe: $(WOFPROBE_SRC)
 	$(CXX) $(CFLAGS) $^ -o $@
 
 clean:
-	- rm -f wofprob wofprob.exe
+	- rm -f wofprobe wofprobe.exe

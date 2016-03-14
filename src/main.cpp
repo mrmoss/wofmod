@@ -3,12 +3,12 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "parser.hpp"
+#include "probe.hpp"
 
 void show_help()
 {
-	std::cerr<<"  Usage: ./wofprob [FILE]"<<std::endl;
-	std::cerr<<"  If no rules file is provided, rules will be read from stdin."<<std::endl;
+	std::cerr<<"  Usage: ./wofprobe [FILE]"<<std::endl;
+	std::cerr<<"  If no wofstat file is provided, wofstats will be read from stdin."<<std::endl;
 }
 
 int main(int argc,char* argv[])
@@ -34,20 +34,15 @@ int main(int argc,char* argv[])
 			else
 				break;
 		fstr.close();
-		std::string def_out;
-		std::string def_in;
-		std::string output;
+		wof_list_t wofs;
 		for(lineno=0;lineno<(int)lines.size();++lineno)
-			wof_parse_line(lines[lineno],output,def_out,def_in);
-		if(def_out.size()==0&&def_in.size()==0&&output.size()==0)
+			wof_probe_line(lines[lineno],wofs);
+		std::string output(wof_probe(wofs));
+		if(output.size()==0)
 		{
 			lineno=-1;
-			throw std::runtime_error("No rules found.");
+			throw std::runtime_error("No wofstats found.");
 		}
-		if(def_out.size()==0)
-			def_out="deny";
-		if(def_in.size()==0)
-			def_in="deny";
 		std::cout<<output<<std::flush;
 	}
 	catch(std::exception& error)
