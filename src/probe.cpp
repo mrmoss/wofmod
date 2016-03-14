@@ -36,7 +36,18 @@ void wof_probe_line(std::string line,wof_list_t& wofs)
 	}
 }
 
-typedef std::map<unsigned int,size_t> count_t;
+struct node_t
+{
+	unsigned int port;
+	std::string proto;
+};
+
+bool operator<(const node_t& lhs,const node_t& rhs)
+{
+	return lhs.port<rhs.port;
+}
+
+typedef std::map<node_t,size_t> count_t;
 
 std::string wof_probe(wof_list_t wofs)
 {
@@ -46,20 +57,32 @@ std::string wof_probe(wof_list_t wofs)
 	for(size_t ii=0;ii<wofs.size();++ii)
 	{
 		if(wofs[ii].dir=="<>"||wofs[ii].dir==">")
-			++o_ports[to_int(wofs[ii].f_port)];
+		{
+			node_t node;
+			node.port=to_int(wofs[ii].f_port);
+			node.proto=wofs[ii].proto;
+			++o_ports[node];
+		}
 		if(wofs[ii].dir=="<>"||wofs[ii].dir=="<")
-			++i_ports[to_int(wofs[ii].l_port)];
+		{
+			node_t node;
+			node.port=to_int(wofs[ii].l_port);
+			node.proto=wofs[ii].proto;
+			++i_ports[node];
+		}
 	}
 
 	std::ostringstream ostr;
-	ostr<<"Out Ports\n";
+	ostr<<"#Defaults\ndefault <> deny\n\n";
+	ostr<<"#Out Ports\n";
 	for(count_t::iterator it=o_ports.begin();it!=o_ports.end();++it)
-		if(it->first>0&&it->first<65536&&it->second>0)
-			ostr<<it->first<<" "<<it->second<<std::endl;
-	ostr<<"\nIn Ports\n";
+		if(it->first.port>0&&it->first.port<65536&&it->second>0)
+			ostr<<it->first.proto<<" any>any:"<<it->first.port<<" pass\n";
+	ostr<<"\n";
+	ostr<<"#In Ports\n";
 	for(count_t::iterator it=i_ports.begin();it!=i_ports.end();++it)
-		if(it->first>0&&it->first<65536&&it->second>0)
-			ostr<<it->first<<" "<<it->second<<std::endl;
+		if(it->first.port>0&&it->first.port<65536&&it->second>0)
+			ostr<<it->first.proto<<" any:"<<it->first.port<<"<any pass\n";
 
 	return ostr.str();
 }
