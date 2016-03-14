@@ -7,7 +7,7 @@
 
 void show_help()
 {
-	std::cerr<<"  Usage: ./wofmod [FILE]"<<std::endl;
+	std::cerr<<"  Usage: ./wofprob [FILE]"<<std::endl;
 	std::cerr<<"  If no rules file is provided, rules will be read from stdin."<<std::endl;
 }
 
