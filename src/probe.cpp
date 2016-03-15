@@ -36,10 +36,15 @@ void wof_probe_line(std::string line,wof_list_t& wofs)
 	}
 }
 
-struct node_t
+class node_t
 {
-	unsigned int port;
-	std::string proto;
+	public:
+		unsigned int port;
+		std::string proto;
+
+		node_t(unsigned int port,const std::string& proto):
+			port(port),proto(proto)
+		{}
 };
 
 bool operator<(const node_t& lhs,const node_t& rhs)
@@ -56,33 +61,40 @@ std::string wof_probe(wof_list_t wofs)
 
 	for(size_t ii=0;ii<wofs.size();++ii)
 	{
-		if(wofs[ii].dir=="<>"||wofs[ii].dir==">")
+		if((wofs[ii].dir=="<>"||wofs[ii].dir==">")&&wofs[ii].f_port!="0"&&to_int(wofs[ii].f_port)<10000)
+			++o_ports[node_t(to_int(wofs[ii].f_port),wofs[ii].proto)];
+		if((wofs[ii].dir=="<>"||wofs[ii].dir=="<")&&wofs[ii].l_port!="0"&&to_int(wofs[ii].l_port)<10000)
+			++i_ports[node_t(to_int(wofs[ii].l_port),wofs[ii].proto)];
+	}
+
+	for(count_t::iterator it=o_ports.begin();it!=o_ports.end();++it)
+	{
+		if(it->first.proto=="tcp")
 		{
-			node_t node;
-			node.port=to_int(wofs[ii].f_port);
-			node.proto=wofs[ii].proto;
-			++o_ports[node];
-		}
-		if(wofs[ii].dir=="<>"||wofs[ii].dir=="<")
-		{
-			node_t node;
-			node.port=to_int(wofs[ii].l_port);
-			node.proto=wofs[ii].proto;
-			++i_ports[node];
+			if(it->first.port==80&&o_ports.count(node_t(443,"tcp"))<=0)
+				o_ports[node_t(443,"tcp")]=it->second;
+			if(it->first.port==443&&o_ports.count(node_t(80,"tcp"))<=0)
+				o_ports[node_t(80,"tcp")]=it->second;
 		}
 	}
 
 	std::ostringstream ostr;
 	ostr<<"#Defaults\ndefault <> deny\n\n";
+
 	ostr<<"#Out Ports\n";
 	for(count_t::iterator it=o_ports.begin();it!=o_ports.end();++it)
-		if(it->first.port>0&&it->first.port<65536&&it->second>0)
-			ostr<<it->first.proto<<" any>any:"<<it->first.port<<" pass\n";
+		ostr<<it->first.proto<<" any>any:"<<it->first.port<<" pass\n";
 	ostr<<"\n";
+
 	ostr<<"#In Ports\n";
 	for(count_t::iterator it=i_ports.begin();it!=i_ports.end();++it)
-		if(it->first.port>0&&it->first.port<65536&&it->second>0)
-			ostr<<it->first.proto<<" any:"<<it->first.port<<"<any pass\n";
+		ostr<<it->first.proto<<" any:"<<it->first.port<<"<any pass\n";
+	ostr<<"\n";
+
+	ostr<<"#Assumed Services (Change/Uncomment)\n";
+	ostr<<"#udp any:68<>any:67 pass         #DHCP Client\n";
+	ostr<<"#udp any>any:53     pass         #DNS  Client\n";
+	ostr<<"#udp any<>any:123   pass         #NTP  Client\n";
 
 	return ostr.str();
 }
