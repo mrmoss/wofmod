@@ -26,17 +26,21 @@ int main(int argc,char* argv[])
 				throw std::runtime_error("Could not open file \""+std::string(argv[1])+"\".");
 			istr=&fstr;
 		}
-		std::vector<std::string> lines;
+		wof_list_t wofs;
 		std::string temp;
 		while(true)
+		{
 			if(getline(*istr,temp))
-				lines.push_back(temp);
+			{
+				wof_probe_line(temp,wofs);
+				++lineno;
+			}
 			else
+			{
 				break;
+			}
+		}
 		fstr.close();
-		wof_list_t wofs;
-		for(lineno=0;lineno<(int)lines.size();++lineno)
-			wof_probe_line(lines[lineno],wofs);
 		std::string output(wof_probe(wofs));
 		if(output.size()==0)
 		{
