@@ -22,6 +22,6 @@ typedef std::vector<wof_t> wof_list_t;
 
 void wof_probe_line(std::string line,wof_list_t& wofs);
 
-std::string wof_probe(wof_list_t wofs);
+std::string wof_probe(wof_list_t wofs,const bool highports=false);
 
 #endif

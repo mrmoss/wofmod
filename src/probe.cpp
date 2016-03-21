@@ -54,16 +54,16 @@ bool operator<(const node_t& lhs,const node_t& rhs)
 
 typedef std::map<node_t,size_t> count_t;
 
-std::string wof_probe(wof_list_t wofs)
+std::string wof_probe(wof_list_t wofs,const bool highports)
 {
 	count_t i_ports;
 	count_t o_ports;
 
 	for(size_t ii=0;ii<wofs.size();++ii)
 	{
-		if((wofs[ii].dir=="<>"||wofs[ii].dir==">")&&wofs[ii].f_port!="0"&&to_int(wofs[ii].f_port)<10000)
+		if((wofs[ii].dir=="<>"||wofs[ii].dir==">")&&wofs[ii].f_port!="0"&&(to_int(wofs[ii].f_port)<1024||highports))
 			++o_ports[node_t(to_int(wofs[ii].f_port),wofs[ii].proto)];
-		if((wofs[ii].dir=="<>"||wofs[ii].dir=="<")&&wofs[ii].l_port!="0"&&to_int(wofs[ii].l_port)<10000)
+		if((wofs[ii].dir=="<>"||wofs[ii].dir=="<")&&wofs[ii].l_port!="0"&&(to_int(wofs[ii].l_port)<1024||highports))
 			++i_ports[node_t(to_int(wofs[ii].l_port),wofs[ii].proto)];
 	}
 

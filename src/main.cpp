@@ -7,7 +7,8 @@
 
 void show_help()
 {
-	std::cerr<<"  Usage: ./wofprobe [FILE]"<<std::endl;
+	std::cerr<<"  Usage: ./wofprobe [-h][FILE]"<<std::endl;
+	std::cerr<<"  -h          Apply high ports >=1024."<<std::endl;
 	std::cerr<<"  If no wofstat file is provided, wofstats will be read from stdin."<<std::endl;
 }
 
@@ -16,15 +17,30 @@ int main(int argc,char* argv[])
 	std::cerr<<"Walls of Fire - Massages wofstat output into wof firewall rules."<<std::endl;
 	std::istream* istr=&std::cin;
 	std::ifstream fstr;
+	bool highports=false;
 	int lineno=0;
 	try
 	{
 		if(argc>1)
 		{
-			fstr.open(argv[1]);
-			if(!fstr)
-				throw std::runtime_error("Could not open file \""+std::string(argv[1])+"\".");
-			istr=&fstr;
+			for(int ii=1;ii<argc;++ii)
+			{
+				if(ii+1==argc)
+				{
+					fstr.open(argv[ii]);
+					if(!fstr)
+						throw std::runtime_error("Could not open file \""+std::string(argv[1])+"\".");
+					istr=&fstr;
+				}
+				else
+				{
+					std::string option(argv[ii]);
+					if(option=="-h")
+						highports=true;
+					else
+						throw std::runtime_error("Unknown cli option \""+option+"\".");
+				}
+			}
 		}
 		wof_list_t wofs;
 		std::string temp;
@@ -41,7 +57,7 @@ int main(int argc,char* argv[])
 			}
 		}
 		fstr.close();
-		std::string output(wof_probe(wofs));
+		std::string output(wof_probe(wofs,highports));
 		if(output.size()==0)
 		{
 			lineno=-1;
