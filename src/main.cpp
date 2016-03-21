@@ -25,7 +25,9 @@ int main(int argc,char* argv[])
 		{
 			for(int ii=1;ii<argc;++ii)
 			{
-				if(ii+1==argc)
+				std::string option(argv[ii]);
+
+				if(ii+1==argc&&option.substr(0,1)!="-")
 				{
 					fstr.open(argv[ii]);
 					if(!fstr)
