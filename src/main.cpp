@@ -7,8 +7,9 @@
 
 void show_help()
 {
-	std::cerr<<"  Usage: ./wofprobe [-h][FILE]"<<std::endl;
-	std::cerr<<"  -h          Apply high ports >=1024."<<std::endl;
+	std::cerr<<"  Usage: ./wofprobe [--help][--highports][-h] [FILE]"<<std::endl;
+	std::cerr<<"  --help            Show help menu."<<std::endl;
+	std::cerr<<"  --highports, -h   Apply high ports >=1024."<<std::endl;
 	std::cerr<<"  If no wofstat file is provided, wofstats will be read from stdin."<<std::endl;
 }
 
@@ -25,22 +26,26 @@ int main(int argc,char* argv[])
 		{
 			for(int ii=1;ii<argc;++ii)
 			{
-				std::string option(argv[ii]);
+				std::string cli(argv[ii]);
 
-				if(ii+1==argc&&option.substr(0,1)!="-")
+				if(ii+1==argc&&cli.substr(0,1)!="-")
 				{
 					fstr.open(argv[ii]);
 					if(!fstr)
-						throw std::runtime_error("Could not open file \""+std::string(argv[1])+"\".");
+						throw std::runtime_error("Could not open file \""+cli+"\".");
 					istr=&fstr;
 				}
 				else
 				{
-					std::string option(argv[ii]);
-					if(option=="-h")
+					if(cli=="--help")
+					{
+						show_help();
+						return 1;
+					}
+					if(cli=="--highports"||cli=="-h")
 						highports=true;
 					else
-						throw std::runtime_error("Unknown cli option \""+option+"\".");
+						throw std::runtime_error("Unknown cli argument \""+cli+"\".");
 				}
 			}
 		}

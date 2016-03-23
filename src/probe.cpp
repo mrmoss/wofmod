@@ -161,7 +161,8 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 	}
 
 	std::ostringstream ostr;
-	ostr<<"#Defaults\ndefault <> deny\n\n";
+	ostr<<"#Defaults\n";
+	ostr<<"default <> deny\n\n";
 
 	if(o_ports.size()>0)
 	{
