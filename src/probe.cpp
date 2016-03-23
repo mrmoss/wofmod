@@ -207,9 +207,9 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 	}
 
 	ostr<<"#Common Services (Change/Uncomment)\n";
-	ostr<<"#udp any:68<>any:67 pass         #DHCP Client\n";
-	ostr<<"#udp any>any:53     pass         #DNS  Client\n";
-	ostr<<"#udp any:123<>any:123   pass         #NTP  Client\n";
+	ostr<<"#udp any:68<>any:67   pass #DHCP Client\n";
+	ostr<<"#udp any>any:53       pass #DNS  Client\n";
+	ostr<<"#udp any:123<>any:123 pass #NTP  Client\n";
 
 	return ostr.str();
 }
