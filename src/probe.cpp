@@ -42,9 +42,10 @@ class node_t
 		unsigned int port;
 		std::string proto;
 		std::string dir;
+		std::string addr;
 
-		node_t(unsigned int port,const std::string& proto,const std::string& dir=""):
-			port(port),proto(proto),dir(dir)
+		node_t(unsigned int port,const std::string& proto,const std::string& dir="",const std::string& addr="any"):
+			port(port),proto(proto),dir(dir),addr(addr)
 		{}
 };
 
@@ -55,7 +56,18 @@ bool operator<(const node_t& lhs,const node_t& rhs)
 
 bool operator==(const node_t& lhs,const node_t& rhs)
 {
-	return (lhs.port==rhs.port&&lhs.proto==rhs.proto&&lhs.dir==rhs.dir);
+	return (lhs.port==rhs.port&&lhs.proto==rhs.proto&&
+		(lhs.dir==rhs.dir||lhs.dir=="<>"||rhs.dir=="<>")&&
+		(lhs.addr==rhs.addr||lhs.addr=="any"||rhs.addr=="any"));
+}
+
+node_t reverse(node_t node)
+{
+	if(node.dir==">")
+		node.dir="<";
+	else if(node.dir=="<")
+		node.dir=">";
+	return node;
 }
 
 typedef std::map<node_t,size_t> count_t;
@@ -86,38 +98,47 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 	for(size_t ii=0;ii<wofs.size();++ii)
 	{
 		if((wofs[ii].dir=="<>"||wofs[ii].dir==">")&&wofs[ii].f_port!="0"&&(to_int(wofs[ii].f_port)<10000||highports))
-			++o_ports[node_t(to_int(wofs[ii].f_port),wofs[ii].proto)];
+		{
+			std::string addr(wofs[ii].f_ip+"/"+wofs[ii].f_mask);
+			if(wofs[ii].f_mask=="32"&&!wofs[ii].V6)
+				addr=wofs[ii].f_ip;
+			if(wofs[ii].f_mask=="128"&&wofs[ii].V6)
+				addr=wofs[ii].f_ip;
+			if(wofs[ii].f_ip=="0.0.0.0"||wofs[ii].f_ip=="::"||wofs[ii].f_port=="80"||wofs[ii].f_port=="443")
+				addr="any";
+			++o_ports[node_t(to_int(wofs[ii].f_port),wofs[ii].proto,">",addr)];
+		}
 		if((wofs[ii].dir=="<>"||wofs[ii].dir=="<")&&wofs[ii].l_port!="0"&&(to_int(wofs[ii].l_port)<10000||highports))
-			++i_ports[node_t(to_int(wofs[ii].l_port),wofs[ii].proto)];
+			++i_ports[node_t(to_int(wofs[ii].l_port),wofs[ii].proto,"<")];
 	}
-
 	//https://support.microsoft.com/en-us/kb/832017#4
+	//nodes are arranged for a client, call reverse on server checks.
 	bool ad_server=false;
 	bool ad_client=false;
 	std::vector<node_t> ad_ports;
-		ad_ports.push_back(node_t(53,"tcp"));
-		ad_ports.push_back(node_t(88,"any"));
-		ad_ports.push_back(node_t(135,"tcp"));
-		ad_ports.push_back(node_t(137,"udp"));
-		ad_ports.push_back(node_t(138,"udp"));
-		ad_ports.push_back(node_t(139,"tcp"));
-		ad_ports.push_back(node_t(389,"any"));
-		ad_ports.push_back(node_t(445,"tcp"));
-		ad_ports.push_back(node_t(464,"any"));
-		ad_ports.push_back(node_t(636,"any"));
-		ad_ports.push_back(node_t(2535,"udp"));
-		ad_ports.push_back(node_t(3268,"tcp"));
-		ad_ports.push_back(node_t(3269,"tcp"));
-		ad_ports.push_back(node_t(9389,"tcp"));
+		ad_ports.push_back(node_t(53,"tcp",">"));
+		ad_ports.push_back(node_t(88,"any",">"));
+		ad_ports.push_back(node_t(135,"tcp","<"));
+		ad_ports.push_back(node_t(137,"udp","<"));
+		ad_ports.push_back(node_t(138,"udp","<"));
+		ad_ports.push_back(node_t(139,"tcp","<"));
+		ad_ports.push_back(node_t(389,"any",">"));
+		ad_ports.push_back(node_t(445,"tcp","<"));
+		ad_ports.push_back(node_t(464,"any",">"));
+		ad_ports.push_back(node_t(636,"any",">"));
+		ad_ports.push_back(node_t(2535,"udp",">"));
+		ad_ports.push_back(node_t(3268,"tcp",">"));
+		ad_ports.push_back(node_t(3269,"tcp",">"));
+		ad_ports.push_back(node_t(9389,"tcp",">"));
 	std::vector<node_t> ad_ports_additional;
-		ad_ports_additional.push_back(node_t(25,"tcp"));
-		ad_ports_additional.push_back(node_t(53,"udp"));
-		ad_ports_additional.push_back(node_t(67,"udp"));
-		ad_ports_additional.push_back(node_t(123,"udp"));
+		ad_ports_additional.push_back(node_t(25,"tcp",">"));
+		ad_ports_additional.push_back(node_t(53,"udp",">"));
+		ad_ports_additional.push_back(node_t(67,"udp",">"));
+		ad_ports_additional.push_back(node_t(123,"udp",">"));
 	for(count_t::iterator it=i_ports.begin();it!=i_ports.end();++it)
 	{
 		for(size_t ii=0;ii<ad_ports.size();++ii)
-			if(it->first==ad_ports[ii])
+			if(it->first==reverse(ad_ports[ii]))
 			{
 				ad_server=true;
 				break;
@@ -146,7 +167,39 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 		remove_duplicates(o_ports,ad_ports);
 		remove_duplicates(o_ports,ad_ports_additional);
 	}
-
+	if(!ad_server&&!ad_client)
+	{
+		for(count_t::iterator it=i_ports.begin();it!=i_ports.end();)
+		{
+			bool deleted=false;
+			for(size_t ii=0;ii<ad_ports.size();++ii)
+			{
+				if(it->first==ad_ports[ii]||it->first==reverse(ad_ports[ii]))
+				{
+					i_ports.erase(it++);
+					deleted=true;
+					break;
+				}
+			}
+			if(!deleted)
+				++it;
+		}
+		for(count_t::iterator it=o_ports.begin();it!=o_ports.end();)
+		{
+			bool deleted=false;
+			for(size_t ii=0;ii<ad_ports.size();++ii)
+			{
+				if(it->first==ad_ports[ii]||it->first==reverse(ad_ports[ii]))
+				{
+					o_ports.erase(it++);
+					deleted=true;
+					break;
+				}
+			}
+			if(!deleted)
+				++it;
+		}
+	}
 	for(count_t::iterator it=o_ports.begin();it!=o_ports.end();++it)
 	{
 		if(o_ports.count(node_t(80,"tcp"))>0&&o_ports.count(node_t(443,"tcp")))
@@ -159,27 +212,23 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 				o_ports[node_t(80,"tcp")]=it->second;
 		}
 	}
-
 	std::ostringstream ostr;
 	ostr<<"#Defaults\n";
 	ostr<<"default <> deny\n\n";
-
 	if(o_ports.size()>0)
 	{
 		ostr<<"#Out Ports\n";
 		for(count_t::iterator it=o_ports.begin();it!=o_ports.end();++it)
-			ostr<<it->first.proto<<" any>any:"<<it->first.port<<" pass\n";
+			ostr<<it->first.proto<<" any>"<<it->first.addr<<":"<<it->first.port<<" pass\n";
 		ostr<<"\n";
 	}
-
 	if(i_ports.size()>0)
 	{
 		ostr<<"#In Ports\n";
 		for(count_t::iterator it=i_ports.begin();it!=i_ports.end();++it)
-			ostr<<it->first.proto<<" any:"<<it->first.port<<"<any pass\n";
+			ostr<<it->first.proto<<" "<<it->first.addr<<":"<<it->first.port<<"<any pass\n";
 		ostr<<"\n";
 	}
-
 	if(ad_server)
 	{
 		ostr<<"#AD Server\n";
@@ -192,7 +241,6 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 		ostr<<"udp any:123<>any:123\n";
 		ostr<<"\n";
 	}
-
 	if(ad_client)
 	{
 		ostr<<"#AD Client\n";
@@ -205,11 +253,9 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 		ostr<<"udp any:123<>any:123\n";
 		ostr<<"\n";
 	}
-
 	ostr<<"#Common Services (Change/Uncomment)\n";
 	ostr<<"#udp any:68<>any:67   pass #DHCP Client\n";
 	ostr<<"#udp any>any:53       pass #DNS  Client\n";
 	ostr<<"#udp any:123<>any:123 pass #NTP  Client\n";
-
 	return ostr.str();
 }
