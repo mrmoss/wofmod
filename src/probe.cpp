@@ -116,14 +116,8 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 	bool ad_server=false;
 	bool ad_client=false;
 	std::vector<node_t> ad_ports;
-		ad_ports.push_back(node_t(53,"tcp",">"));
 		ad_ports.push_back(node_t(88,"any",">"));
-		ad_ports.push_back(node_t(135,"tcp","<"));
-		ad_ports.push_back(node_t(137,"udp","<"));
-		ad_ports.push_back(node_t(138,"udp","<"));
-		ad_ports.push_back(node_t(139,"tcp","<"));
 		ad_ports.push_back(node_t(389,"any",">"));
-		ad_ports.push_back(node_t(445,"tcp","<"));
 		ad_ports.push_back(node_t(464,"any",">"));
 		ad_ports.push_back(node_t(636,"any",">"));
 		ad_ports.push_back(node_t(2535,"udp",">"));
@@ -135,6 +129,17 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 		ad_ports_additional.push_back(node_t(53,"udp",">"));
 		ad_ports_additional.push_back(node_t(67,"udp",">"));
 		ad_ports_additional.push_back(node_t(123,"udp",">"));
+		ad_ports_additional.push_back(node_t(445,"tcp","<"));
+		ad_ports_additional.push_back(node_t(135,"tcp","<"));
+		ad_ports_additional.push_back(node_t(137,"udp","<"));
+		ad_ports_additional.push_back(node_t(138,"udp","<"));
+		ad_ports_additional.push_back(node_t(139,"tcp","<"));
+	std::vector<node_t> ad_devil_ports;
+		ad_devil_ports.push_back(node_t(445,"tcp","<"));
+		ad_devil_ports.push_back(node_t(135,"tcp","<"));
+		ad_devil_ports.push_back(node_t(137,"udp","<"));
+		ad_devil_ports.push_back(node_t(138,"udp","<"));
+		ad_devil_ports.push_back(node_t(139,"tcp","<"));
 	for(count_t::iterator it=i_ports.begin();it!=i_ports.end();++it)
 	{
 		for(size_t ii=0;ii<ad_ports.size();++ii)
@@ -172,9 +177,9 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 		for(count_t::iterator it=i_ports.begin();it!=i_ports.end();)
 		{
 			bool deleted=false;
-			for(size_t ii=0;ii<ad_ports.size();++ii)
+			for(size_t ii=0;ii<ad_devil_ports.size();++ii)
 			{
-				if(it->first==ad_ports[ii]||it->first==reverse(ad_ports[ii]))
+				if(it->first==ad_devil_ports[ii]||it->first==reverse(ad_devil_ports[ii]))
 				{
 					i_ports.erase(it++);
 					deleted=true;
@@ -187,9 +192,9 @@ std::string wof_probe(wof_list_t wofs,const bool highports)
 		for(count_t::iterator it=o_ports.begin();it!=o_ports.end();)
 		{
 			bool deleted=false;
-			for(size_t ii=0;ii<ad_ports.size();++ii)
+			for(size_t ii=0;ii<ad_devil_ports.size();++ii)
 			{
-				if(it->first==ad_ports[ii]||it->first==reverse(ad_ports[ii]))
+				if(it->first==ad_devil_ports[ii]||it->first==reverse(ad_devil_ports[ii]))
 				{
 					o_ports.erase(it++);
 					deleted=true;
